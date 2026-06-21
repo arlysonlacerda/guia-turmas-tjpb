@@ -1,0 +1,1230 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Guia das Turmas Recursais — TJPB · Res. 29/2026</title>
+  <meta name="description" content="Guia prático das Turmas Recursais do Sistema dos Juizados Especiais da Paraíba. Recursos, prazos, sustentação oral, calculadora de prazos e calendário forense 2026. Baseado na Resolução TJPB nº 29/2026." />
+  <meta name="keywords" content="Turmas Recursais, TJPB, Juizados Especiais, Paraíba, Recurso Inominado, Sustentação Oral, Prazos, Res 29/2026" />
+  <meta name="author" content="Guia Prático — TJPB" />
+  <!-- Open Graph (WhatsApp, LinkedIn, Facebook) -->
+  <meta property="og:title" content="Guia das Turmas Recursais — TJPB" />
+  <meta property="og:description" content="Recursos, prazos, calculadora forense 2026 e sustentação oral. Baseado na Resolução TJPB nº 29/2026." />
+  <meta property="og:type" content="website" />
+  <meta property="og:locale" content="pt_BR" />
+  <!-- Twitter Card -->
+  <meta name="twitter:card" content="summary" />
+  <meta name="twitter:title" content="Guia das Turmas Recursais — TJPB" />
+  <meta name="twitter:description" content="Guia prático dos Juizados Especiais da Paraíba — Res. 29/2026." />
+  <!-- Favicon emoji -->
+  <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>⚖️</text></svg>" />
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/react/18.3.1/umd/react.production.min.js" crossorigin></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/react-dom/18.3.1/umd/react-dom.production.min.js" crossorigin></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/babel-standalone/7.23.5/babel.min.js" crossorigin></script>
+  <style>
+    body { margin: 0; padding: 0; background: #EEF2F7; }
+    #root { min-height: 100vh; }
+    #loading {
+      position: fixed; inset: 0; background: #0F2542;
+      display: flex; flex-direction: column;
+      align-items: center; justify-content: center; z-index: 9999;
+      font-family: sans-serif; color: #C4A454;
+    }
+    #loading .spinner {
+      width: 36px; height: 36px; border: 3px solid rgba(196,164,84,0.3);
+      border-top-color: #C4A454; border-radius: 50%;
+      animation: spin 0.8s linear infinite; margin-bottom: 16px;
+    }
+    #loading p { font-size: 13px; opacity: 0.7; margin: 0; letter-spacing: 1px; }
+    @keyframes spin { to { transform: rotate(360deg); } }
+  </style>
+</head>
+<body>
+  <div id="loading">
+    <div class="spinner"></div>
+    <p>CARREGANDO GUIA...</p>
+  </div>
+  <div id="root"></div>
+
+  <script type="text/babel">
+const { useState, useMemo } = React;
+
+/* ══════════════════════════════════════════════════════
+   CALENDÁRIO FORENSE TJPB 2026
+   Fonte: Calendário Oficial TJPB 2026
+══════════════════════════════════════════════════════ */
+
+// Chave de data: "ano-mês(0-11)-dia"
+function getKey(d) { return `${d.getFullYear()}-${d.getMonth()}-${d.getDate()}`; }
+
+// Dias não-úteis forenses do TJPB 2026 (excluindo sábados e domingos que já são filtrados)
+// Inclui: feriados nacionais, feriados estaduais, pontos facultativos e recesso forense
+const FORENSE_2026 = new Map([
+  // ── JANEIRO ──
+  ["2026-0-1",  { nome: "Confraternização Universal + Recesso Forense", tipo: "feriado"    }],
+  ["2026-0-2",  { nome: "Recesso Forense (01/01 – 06/01)",              tipo: "recesso"    }],
+  ["2026-0-5",  { nome: "Recesso Forense",                              tipo: "recesso"    }],
+  ["2026-0-6",  { nome: "Recesso Forense",                              tipo: "recesso"    }],
+  // ── FEVEREIRO ── Carnaval
+  ["2026-1-16", { nome: "Ponto Facultativo — Carnaval",                 tipo: "facultativo"}],
+  ["2026-1-17", { nome: "Ponto Facultativo — Carnaval",                 tipo: "facultativo"}],
+  ["2026-1-18", { nome: "Quarta-feira de Cinzas",                       tipo: "facultativo"}],
+  // ── ABRIL ── Semana Santa + Tiradentes
+  ["2026-3-2",  { nome: "Ponto Facultativo — Semana Santa",             tipo: "facultativo"}],
+  ["2026-3-3",  { nome: "Paixão de Cristo",                             tipo: "feriado"    }],
+  ["2026-3-20", { nome: "Ponto Facultativo (Compensado)",               tipo: "facultativo"}],
+  ["2026-3-21", { nome: "Tiradentes",                                   tipo: "feriado"    }],
+  // ── MAIO ──
+  ["2026-4-1",  { nome: "Dia do Trabalhador",                           tipo: "feriado"    }],
+  // ── JUNHO ── Corpus Christi + São João
+  ["2026-5-4",  { nome: "Corpus Christi (Ponto Facultativo)",           tipo: "facultativo"}],
+  ["2026-5-5",  { nome: "Ponto Facultativo (Compensado)",               tipo: "facultativo"}],
+  ["2026-5-22", { nome: "Ponto Facultativo (Compensado)",               tipo: "facultativo"}],
+  ["2026-5-23", { nome: "Ponto Facultativo (Compensado)",               tipo: "facultativo"}],
+  ["2026-5-24", { nome: "Ponto Facultativo — São João",                 tipo: "facultativo"}],
+  // ── AGOSTO ── Data Magna PB
+  ["2026-7-5",  { nome: "Feriado Estadual — Data Magna da Paraíba",     tipo: "feriado"    }],
+  ["2026-7-10", { nome: "Ponto Facultativo (Compensado)",               tipo: "facultativo"}],
+  ["2026-7-11", { nome: "Fundação dos Cursos Jurídicos",                tipo: "facultativo"}],
+  // ── SETEMBRO ──
+  ["2026-8-7",  { nome: "Independência do Brasil",                      tipo: "feriado"    }],
+  // ── OUTUBRO ──
+  ["2026-9-12", { nome: "Nossa Senhora Aparecida",                      tipo: "feriado"    }],
+  // ── NOVEMBRO ──
+  ["2026-10-2", { nome: "Finados",                                      tipo: "feriado"    }],
+  ["2026-10-20",{ nome: "Dia Nacional de Zumbi e da Consciência Negra", tipo: "feriado"    }],
+  // ── DEZEMBRO ── Recesso Forense (20/12 – 06/01)
+  ["2026-11-7", { nome: "Ponto Facultativo (Compensado)",               tipo: "facultativo"}],
+  ["2026-11-21",{ nome: "Recesso Forense (20/12 – 06/01)",              tipo: "recesso"    }],
+  ["2026-11-22",{ nome: "Recesso Forense",                              tipo: "recesso"    }],
+  ["2026-11-23",{ nome: "Recesso Forense",                              tipo: "recesso"    }],
+  ["2026-11-24",{ nome: "Recesso Forense",                              tipo: "recesso"    }],
+  ["2026-11-25",{ nome: "Natal",                                        tipo: "feriado"    }],
+  ["2026-11-28",{ nome: "Recesso Forense",                              tipo: "recesso"    }],
+  ["2026-11-29",{ nome: "Recesso Forense",                              tipo: "recesso"    }],
+  ["2026-11-30",{ nome: "Recesso Forense",                              tipo: "recesso"    }],
+  ["2026-11-31",{ nome: "Recesso Forense",                              tipo: "recesso"    }],
+  // ── JANEIRO 2027 ── continuação do recesso
+  ["2027-0-1",  { nome: "Confraternização Universal + Recesso Forense", tipo: "feriado"    }],
+  ["2027-0-4",  { nome: "Recesso Forense",                              tipo: "recesso"    }],
+  ["2027-0-5",  { nome: "Recesso Forense",                              tipo: "recesso"    }],
+  ["2027-0-6",  { nome: "Recesso Forense",                              tipo: "recesso"    }],
+]);
+
+/* ── Feriados automáticos para anos sem calendário oficial ── */
+function calcPascoa(ano) {
+  const a = ano % 19, b = Math.floor(ano / 100), c = ano % 100;
+  const d = Math.floor(b / 4), e = b % 4, f = Math.floor((b + 8) / 25);
+  const g = Math.floor((b - f + 1) / 3);
+  const h = (19 * a + b - d - g + 15) % 30;
+  const i = Math.floor(c / 4), k = c % 4;
+  const l = (32 + 2 * e + 2 * i - h - k) % 7;
+  const m = Math.floor((a + 11 * h + 22 * l) / 451);
+  const mes = Math.floor((h + l - 7 * m + 114) / 31);
+  const dia = ((h + l - 7 * m + 114) % 31) + 1;
+  return new Date(ano, mes - 1, dia);
+}
+
+function buildFeriadosAno(ano) {
+  const p = calcPascoa(ano);
+  const add = (base, n) => { const r = new Date(base); r.setDate(r.getDate() + n); return r; };
+  const lista = [
+    { d: new Date(ano, 0, 1),   nome: "Confraternização Universal",              tipo: "feriado"     },
+    { d: new Date(ano, 3, 21),  nome: "Tiradentes",                              tipo: "feriado"     },
+    { d: new Date(ano, 4, 1),   nome: "Dia do Trabalhador",                      tipo: "feriado"     },
+    { d: new Date(ano, 8, 7),   nome: "Independência do Brasil",                 tipo: "feriado"     },
+    { d: new Date(ano, 9, 12),  nome: "Nossa Senhora Aparecida",                 tipo: "feriado"     },
+    { d: new Date(ano, 10, 2),  nome: "Finados",                                 tipo: "feriado"     },
+    { d: new Date(ano, 10, 15), nome: "Proclamação da República",                tipo: "feriado"     },
+    { d: new Date(ano, 11, 25), nome: "Natal",                                   tipo: "feriado"     },
+    { d: add(p, -48),           nome: "Ponto Facultativo — Carnaval (2ª)",       tipo: "facultativo" },
+    { d: add(p, -47),           nome: "Ponto Facultativo — Carnaval (3ª)",       tipo: "facultativo" },
+    { d: add(p, -2),            nome: "Paixão de Cristo",                        tipo: "feriado"     },
+    { d: add(p, 60),            nome: "Corpus Christi",                          tipo: "facultativo" },
+    { d: new Date(ano, 7, 5),   nome: "Feriado Estadual — Data Magna da Paraíba",tipo: "feriado"     },
+    { d: new Date(ano, 10, 20), nome: "Consciência Negra",                       tipo: "feriado"     },
+    // Recesso jan
+    { d: new Date(ano, 0, 2),   nome: "Recesso Forense",                         tipo: "recesso"     },
+    { d: new Date(ano, 0, 5),   nome: "Recesso Forense",                         tipo: "recesso"     },
+    { d: new Date(ano, 0, 6),   nome: "Recesso Forense",                         tipo: "recesso"     },
+  ];
+  const map = new Map();
+  lista.forEach(f => map.set(getKey(f.d), { nome: f.nome, tipo: f.tipo }));
+  return map;
+}
+
+function buildFeriados(ano) {
+  if (ano === 2026 || ano === 2027) return FORENSE_2026;
+  // Para outros anos: mescla ano e ano+1 (para prazos de recesso)
+  const m1 = buildFeriadosAno(ano);
+  const m2 = buildFeriadosAno(ano + 1);
+  return new Map([...m1, ...m2]);
+}
+
+function getNaoUtil(d, feriados) {
+  const dow = d.getDay();
+  if (dow === 0) return { motivo: "domingo", tipo: "fds" };
+  if (dow === 6) return { motivo: "sábado", tipo: "fds" };
+  const f = feriados.get(getKey(d));
+  if (f)        return { motivo: f.nome, tipo: f.tipo };
+  return null;
+}
+
+function isDiaUtil(d, feriados) { return getNaoUtil(d, feriados) === null; }
+
+function addDiasUteis(inicio, n, feriados) {
+  const d = new Date(inicio);
+  let count = 0;
+  while (count < n) { d.setDate(d.getDate() + 1); if (isDiaUtil(d, feriados)) count++; }
+  // Prorroga se cair em dia não-útil
+  while (!isDiaUtil(d, feriados)) d.setDate(d.getDate() + 1);
+  return d;
+}
+
+function addDiasCorridosCivel(inicio, n, feriados) {
+  const d = new Date(inicio); d.setDate(d.getDate() + n);
+  while (!isDiaUtil(d, feriados)) d.setDate(d.getDate() + 1);
+  return d;
+}
+
+function addDiasCorridosPenal(inicio, n) {
+  const d = new Date(inicio); d.setDate(d.getDate() + n); return d;
+}
+
+const MESES = ["janeiro","fevereiro","março","abril","maio","junho","julho","agosto","setembro","outubro","novembro","dezembro"];
+const DIAS  = ["domingo","segunda-feira","terça-feira","quarta-feira","quinta-feira","sexta-feira","sábado"];
+const fmtL = d => `${DIAS[d.getDay()]}, ${String(d.getDate()).padStart(2,"0")} de ${MESES[d.getMonth()]} de ${d.getFullYear()}`;
+const fmtC = d => `${String(d.getDate()).padStart(2,"0")}/${String(d.getMonth()+1).padStart(2,"0")}/${d.getFullYear()}`;
+
+/* ══════════════════════════════════════════════════════
+   DADOS — Res. 29/2026
+══════════════════════════════════════════════════════ */
+const TIPOS_PRAZO = [
+  { id:"ri",   grupo:"Recursos",             label:"Recurso Inominado",                             dias:10,  tipo:"uteis",       art:"Art. 106" },
+  { id:"ed",   grupo:"Recursos",             label:"Embargos de Declaração",                        dias:5,   tipo:"uteis",       art:"Art. 108" },
+  { id:"ai",   grupo:"Recursos",             label:"Agravo Interno",                                dias:15,  tipo:"uteis",       art:"Art. 113" },
+  { id:"pu",   grupo:"Recursos",             label:"Pedido de Uniformização",                       dias:10,  tipo:"uteis",       art:"Art. 151" },
+  { id:"re",   grupo:"Recursos",             label:"Recurso Extraordinário",                        dias:15,  tipo:"uteis",       art:"Art. 114" },
+  { id:"ac",   grupo:"Recursos",             label:"Apelação Criminal",                             dias:10,  tipo:"penal",       art:"Art. 105", obs:"Dias corridos — matéria penal. Sem prorrogação automática." },
+  { id:"ms",   grupo:"Recursos",             label:"Mandado de Segurança (impetração)",             dias:120, tipo:"corridos",    art:"Lei 12.016/09, art. 23" },
+  { id:"crri", grupo:"Contrarrazões",        label:"Contrarrazões — Recurso Inominado",             dias:10,  tipo:"uteis",       art:"Art. 106, §1º" },
+  { id:"crpu", grupo:"Contrarrazões",        label:"Contrarrazões — Pedido de Uniformização",       dias:10,  tipo:"uteis",       art:"Art. 151, §1º, IV" },
+  { id:"crre", grupo:"Contrarrazões",        label:"Contrarrazões — Recurso Extraordinário",        dias:15,  tipo:"uteis",       art:"CPC, art. 1.030" },
+  { id:"prep", grupo:"Preparo e Gratuidade", label:"Preparo recursal (48h da interposição)",        horas:48, tipo:"horas",       art:"Art. 30" },
+  { id:"grat", grupo:"Preparo e Gratuidade", label:"Recolhimento após negativa de gratuidade (48h)",horas:48, tipo:"horas",       art:"Art. 29, §3º" },
+  { id:"sop",  grupo:"Sustentação Oral",     label:"Limite inscrição SO — sessão presencial (24h)", horas:24, tipo:"horas_antes", art:"Art. 80, I" },
+  { id:"sov",  grupo:"Sustentação Oral",     label:"Limite envio arquivo SO — sessão virtual (48h)",horas:48, tipo:"horas_antes", art:"Art. 59, §6º" },
+];
+const GRUPOS_PRAZO = ["Recursos","Contrarrazões","Preparo e Gratuidade","Sustentação Oral"];
+
+const RECURSOS_LISTA = [
+  { id:"inominado",     sigla:"RI",        nome:"Recurso Inominado",          art:"Art. 106",      prazo:"10 dias úteis",    preparo:true,  sustentacao:true,  destino:"Turma Recursal",
+    cabimento:"Contra sentença do JEC e da Fazenda Pública, exceto homologatória de conciliação ou laudo arbitral.",
+    preparo_d:"Comprovado em 48h da interposição, independentemente de intimação. Sem comprovação → deserção (art. 30).",
+    contra:"10 dias (intimação do recorrido pela Secretaria do Juizado de origem).",
+    obs:"Juízo de admissibilidade pelo relator (art. 1.010, §3º, CPC — aplicação subsidiária). Acórdão substitui a sentença no que foi objeto de recurso.", alerta:null },
+  { id:"embargos",      sigla:"ED",        nome:"Embargos de Declaração",     art:"Art. 108",      prazo:"5 dias úteis",     preparo:false, sustentacao:false, destino:"Mesmo relator",
+    cabimento:"Contra decisão do relator ou acórdão da Turma — obscuridade, contradição, omissão ou erro material.",
+    preparo_d:"Dispensado — não se sujeitam a preparo (art. 108).",
+    contra:"5 dias — somente se o acolhimento implicar modificação da decisão (art. 108, §1º).",
+    obs:"Interrompem o prazo para qualquer recurso (art. 110). Erros materiais corrigíveis de ofício (art. 111).", alerta:"Protelatórios reiterados → multa de até 2% + inadmissão dos subsequentes (art. 109)" },
+  { id:"agravo_interno",sigla:"Agr. Int.", nome:"Agravo Interno",             art:"Art. 113",      prazo:"15 dias úteis",    preparo:false, sustentacao:true,  destino:"Turma Recursal (colegiado)",
+    cabimento:"Contra decisões monocráticas do juiz da Turma: (I) não conhecer recurso inadmissível; (II) negar provimento por confronto com súmula; (III) dar provimento com base em súmula; (IV) indeferir HC ou MS liminarmente; (V) decidir conflito de competência.",
+    preparo_d:"Não há previsão específica de preparo no Regimento.",
+    contra:"Não há previsão específica.",
+    obs:"Relator pode se retratar (§2º). Não cabe contra decisão colegiada confirmada (§1º). Sustentação oral apenas quando originário de recurso inominado (art. 80).", alerta:null },
+  { id:"re",            sigla:"RE",        nome:"Recurso Extraordinário",     art:"Arts. 114–115", prazo:"15 dias úteis",    preparo:true,  sustentacao:true,  destino:"STF (via Presidente da TR)",
+    cabimento:"Questão constitucional — art. 102, III, CF/88. Admissibilidade pelo Presidente da TR (art. 36, V). Súmula 640-STF.",
+    preparo_d:"Custas locais + custas do STF (art. 29, V). Gratuidade apreciada pelo Presidente da TR (art. 36, XI).",
+    contra:"15 dias.",
+    obs:"Presidente pode sobrestar quando a matéria estiver com repercussão geral reconhecida no STF (art. 36, X).", alerta:"ÚNICO recurso de 3º grau cabível — NÃO cabe REsp (Súmula 203-STJ)" },
+  { id:"apelacao",      sigla:"AC",        nome:"Apelação Criminal",          art:"Art. 105",      prazo:"10 dias CORRIDOS", preparo:true,  sustentacao:true,  destino:"Turma Recursal",
+    cabimento:"Contra sentença de natureza penal e decisão de rejeição de denúncia ou queixa-crime no JECrim.",
+    preparo_d:"Exigido apenas na ação penal privada (art. 29, III). Dispensado para o MP (art. 28).",
+    contra:"MP: 5 dias após distribuição.",
+    obs:"Prazo em dias corridos — matéria criminal (art. 160, §1º). MP recorrente sustenta antes do réu (art. 81, par. único).", alerta:"Prazo em dias CORRIDOS — sem prorrogação automática para dia útil" },
+  { id:"ms",            sigla:"MS",        nome:"Mandado de Segurança",       art:"Arts. 117–123", prazo:"120 dias do ato",  preparo:true,  sustentacao:false, destino:"Turma Recursal (originária)",
+    cabimento:"Contra atos do Presidente/membros da TR e juízes do Sistema dos Juizados, quando violar direito líquido e certo.",
+    preparo_d:"Custas processuais na propositura (art. 24), ressalvada gratuidade.",
+    contra:"Litisconsortes: 15 dias. MP: 5 dias após resposta.",
+    obs:"Relator pode conceder liminar (art. 120, §1º). Informações: 10 dias. Litisconsortes necessários devem ser citados (art. 119).", alerta:null },
+  { id:"hc",            sigla:"HC",        nome:"Habeas Corpus",              art:"Arts. 124–127", prazo:"Sem prazo",        preparo:false, sustentacao:true,  destino:"Turma Recursal (originária)",
+    cabimento:"Violência ou coação na liberdade de locomoção por ato ilegal de juiz do Sistema dos Juizados.",
+    preparo_d:"Não há preparo.",
+    contra:"MP: 5 dias após informações.",
+    obs:"Relator pode conceder liminar sem ouvir a autoridade coatora (art. 125). Alvará e salvo-conduto assinados pelo relator.", alerta:null },
+];
+
+/* ══════════════════════════════════════════════════════
+   PROMPTS PARA ELABORAÇÃO DE PEÇAS NO CLAUDE
+══════════════════════════════════════════════════════ */
+const PROMPTS_PECA = {
+  inominado: {
+    titulo: "Recurso Inominado",
+    texto: `Você é um advogado brasileiro especialista no Sistema dos Juizados Especiais. Elabore um RECURSO INOMINADO seguindo a Lei nº 9.099/95 e a Resolução TJPB nº 29/2026 (Regimento Interno das Turmas Recursais).
+
+═══ DADOS DO PROCESSO ═══
+Número do processo: [preencha]
+Juizado Especial de origem: [ex.: 1º Juizado Especial Cível de Patos/PB]
+Turma Recursal de destino: [1ª / 2ª / 3ª Turma Recursal]
+Recorrente (nome completo e qualificação): [preencha]
+Recorrido(a) (nome completo): [preencha]
+Advogado(a) e OAB nº: [preencha]
+
+═══ DECISÃO RECORRIDA ═══
+[Cole aqui o texto INTEGRAL da sentença]
+
+═══ ARGUMENTOS A SUSTENTAR ═══
+[Descreva os pontos de fato e de direito que devem ser levantados]
+
+═══ PEDIDO ═══
+Reforma total / Reforma parcial (especifique): [preencha]
+
+═══ INSTRUÇÕES PARA A PEÇA ═══
+1. Prazo: 10 dias úteis da publicação (art. 106 da Res. 29/2026);
+2. Estrutura obrigatória: endereçamento à Turma Recursal → qualificação das partes → tempestividade → preparo (art. 30 — 48h da interposição) → razões de recurso → pedido;
+3. Razões com: síntese da decisão recorrida, erro apontado (fático, jurídico ou misto), fundamento normativo, doutrina e jurisprudência do STJ e TJPB;
+4. Linguagem técnica e formal, padrão forense da Paraíba;
+5. Se couber, incluir pedido de efeito suspensivo (art. 37, II, Res. 29/2026) com demonstração de lesão grave e relevância da fundamentação.`
+  },
+  embargos: {
+    titulo: "Embargos de Declaração",
+    texto: `Você é um advogado brasileiro especialista no Sistema dos Juizados Especiais. Elabore EMBARGOS DE DECLARAÇÃO com base no art. 108 da Resolução TJPB nº 29/2026 e na Lei nº 9.099/95.
+
+═══ DADOS DO PROCESSO ═══
+Número do processo: [preencha]
+Turma Recursal / Relator(a): [preencha]
+Embargante (nome completo): [preencha]
+Embargado(a) (nome completo): [preencha]
+Advogado(a) e OAB nº: [preencha]
+
+═══ ACÓRDÃO / DECISÃO EMBARGADA ═══
+[Cole aqui o texto INTEGRAL do acórdão ou decisão monocrática que deseja embargar]
+
+═══ VÍCIO(S) APONTADO(S) ═══
+Indique o(s) vício(s) e a fundamentação (escolha um ou mais):
+[ ] Omissão — o acórdão deixou de se pronunciar sobre: [descreva]
+[ ] Contradição — há contradição entre: [aponte os trechos]
+[ ] Obscuridade — o ponto obscuro é: [descreva]
+[ ] Erro material — o erro consiste em: [descreva]
+
+Há pedido de efeito infringente? [ ] Sim — justificativa: [descreva] [ ] Não
+
+═══ INSTRUÇÕES PARA A PEÇA ═══
+1. Prazo: 5 dias úteis da ciência da decisão (art. 108 da Res. 29/2026) — SEM preparo;
+2. Dirigir ao mesmo relator que proferiu a decisão;
+3. Identificar com precisão o vício, citando o trecho exato do acórdão;
+4. Efeito infringente: fundamentar na Súmula 579-STJ e na jurisprudência do TJPB;
+5. ATENÇÃO: embargos protelatórios sujeitam o embargante a multa de até 2% do valor da causa (art. 109, Res. 29/2026).`
+  },
+  agravo_interno: {
+    titulo: "Agravo Interno",
+    texto: `Você é um advogado brasileiro especialista no Sistema dos Juizados Especiais. Elabore um AGRAVO INTERNO com base no art. 113 da Resolução TJPB nº 29/2026.
+
+═══ DADOS DO PROCESSO ═══
+Número do processo: [preencha]
+Turma Recursal: [1ª / 2ª / 3ª Turma Recursal]
+Agravante (nome completo): [preencha]
+Agravado(a) (nome completo): [preencha]
+Advogado(a) e OAB nº: [preencha]
+
+═══ DECISÃO MONOCRÁTICA AGRAVADA ═══
+[Cole aqui o texto INTEGRAL da decisão monocrática do relator]
+
+═══ HIPÓTESE DE CABIMENTO (art. 113, Res. 29/2026) ═══
+( ) I — Relator não conheceu recurso manifestamente inadmissível ou prejudicado
+( ) II — Relator negou provimento por confronto com súmula/jurisprudência dominante
+( ) III — Relator deu provimento com base em súmula/jurisprudência dominante
+( ) IV — Relator indeferiu liminarmente HC ou MS
+( ) V — Relator decidiu liminarmente conflito de competência
+
+═══ ARGUMENTOS PARA REFORMA ═══
+[Descreva os fundamentos pelos quais a decisão deve ser reformada pelo colegiado]
+
+═══ INSTRUÇÕES PARA A PEÇA ═══
+1. Prazo: 15 dias úteis da intimação (art. 113 da Res. 29/2026);
+2. Dirigido ao Colegiado da Turma Recursal (via relator, para eventual retratação);
+3. Demonstrar o equívoco da decisão monocrática com fundamento legal e jurisprudencial;
+4. Mencionar que cabe retratação pelo relator antes do julgamento colegiado (art. 113, §2º);
+5. Sustentação oral: cabível APENAS quando originário de Recurso Inominado (art. 80, Res. 29/2026).`
+  },
+  re: {
+    titulo: "Recurso Extraordinário",
+    texto: `Você é um advogado brasileiro especialista em recursos constitucionais. Elabore um RECURSO EXTRAORDINÁRIO com base nos arts. 114–115 da Resolução TJPB nº 29/2026 e no art. 102, III da CF/88.
+
+═══ DADOS DO PROCESSO ═══
+Número do processo: [preencha]
+Turma Recursal de origem: [1ª / 2ª / 3ª Turma Recursal]
+Recorrente (nome completo e qualificação): [preencha]
+Recorrido(a) (nome completo): [preencha]
+Advogado(a) e OAB nº: [preencha]
+
+═══ ACÓRDÃO RECORRIDO ═══
+[Cole aqui o texto INTEGRAL do acórdão da Turma Recursal]
+
+═══ QUESTÃO CONSTITUCIONAL ═══
+Dispositivo(s) da CF/88 violado(s): [ex.: art. 5º, XXXV; art. 5º, LIV]
+Descrição da violação: [descreva como o acórdão violou o dispositivo]
+Houve prequestionamento? [ ] Sim (indique onde) [ ] Não (necessário opor ED antes do RE)
+
+═══ REPERCUSSÃO GERAL ═══
+[Demonstre a transcendência da questão constitucional além do caso concreto — art. 102, §3º, CF]
+
+═══ INSTRUÇÕES PARA A PEÇA ═══
+1. Prazo: 15 dias úteis do julgamento (arts. 114 e 160 da Res. 29/2026);
+2. Dirigido ao Presidente da Turma Recursal para juízo de admissibilidade (art. 36, V);
+3. ATENÇÃO: NÃO cabe REsp — Súmula 203-STJ. RE é o único recurso de 3º grau (Súmula 640-STF);
+4. Estrutura: tempestividade → admissibilidade (art. 102, III, alínea) → repercussão geral → razões constitucionais → pedido;
+5. Preparo: custas locais + custas do STF (art. 29, V, Res. 29/2026);
+6. Prequestionamento é pressuposto indispensável — verificar se a questão foi debatida no acórdão.`
+  },
+  apelacao: {
+    titulo: "Apelação Criminal",
+    texto: `Você é um advogado brasileiro especialista em Direito Processual Penal e no Sistema dos Juizados Especiais. Elabore uma APELAÇÃO CRIMINAL com base no art. 105 da Resolução TJPB nº 29/2026 e no art. 82 da Lei nº 9.099/95.
+
+═══ DADOS DO PROCESSO ═══
+Número do processo: [preencha]
+Juizado Especial Criminal de origem: [preencha]
+Turma Recursal de destino: [1ª / 2ª / 3ª Turma Recursal]
+Apelante (nome completo e qualificação): [preencha]
+Parte contrária / Ministério Público: [preencha]
+Advogado(a) e OAB nº: [preencha]
+
+═══ SENTENÇA APELADA ═══
+[Cole aqui o texto INTEGRAL da sentença penal]
+
+═══ ARGUMENTOS PARA REFORMA ═══
+[Descreva os fundamentos pelos quais a sentença deve ser reformada]
+
+═══ PEDIDO ═══
+( ) Absolvição — fundamento (art. 386, CPP, inciso): [preencha]
+( ) Reforma da pena — para: [descreva]
+( ) Nulidade — fundamento: [descreva]
+( ) Outro: [descreva]
+
+═══ INSTRUÇÕES PARA A PEÇA ═══
+1. Prazo: 10 dias CORRIDOS da intimação — MATÉRIA PENAL, SEM prorrogação automática (art. 160, §1º, Res. 29/2026);
+2. Preparo: apenas em ação penal privada (art. 29, III); dispensado para o MP (art. 28);
+3. Razões devem acompanhar a interposição;
+4. Após distribuição, MP é intimado para contrarrazões em 5 dias;
+5. Linguagem técnica com referências ao CPP, à Lei 9.099/95 e à jurisprudência do STJ.`
+  },
+  ms: {
+    titulo: "Mandado de Segurança",
+    texto: `Você é um advogado brasileiro especialista em mandado de segurança processual. Elabore um MANDADO DE SEGURANÇA com base nos arts. 117–123 da Resolução TJPB nº 29/2026 e na Lei nº 12.016/09.
+
+═══ DADOS DO PROCESSO ═══
+Número do processo de origem (se houver): [preencha]
+Autoridade coatora (nome e cargo): [ex.: MM. Juiz do 1º Juizado Especial Cível de Patos/PB]
+Impetrante (nome completo e qualificação): [preencha]
+Advogado(a) e OAB nº: [preencha]
+Litisconsortes necessários identificáveis: [preencha ou "não identificados"]
+
+═══ ATO COATOR ═══
+[Descreva o ato ilegal ou abusivo que viola direito líquido e certo. Cole a decisão/despacho se disponível]
+
+═══ DIREITO LÍQUIDO E CERTO VIOLADO ═══
+[Descreva o direito e por que é líquido e certo — demonstrável de plano, sem dilação probatória]
+
+═══ PEDIDO DE LIMINAR ═══
+[ ] Sim — fumus boni iuris: [descreva] / periculum in mora: [descreva] [ ] Não
+
+═══ INSTRUÇÕES PARA A PEÇA ═══
+1. Prazo: 120 dias do ato coator (art. 23, Lei 12.016/09);
+2. Competência: Turma Recursal — para atos de juiz do Sistema dos Juizados (art. 117, Res. 29/2026);
+3. Estrutura: qualificação → competência → ato coator → direito líquido e certo → liminar (se cabível) → pedido;
+4. Litisconsortes necessários identificáveis devem ser citados (art. 119, Res. 29/2026);
+5. Preparo: custas na propositura, ressalvada gratuidade (art. 24, Res. 29/2026).`
+  },
+  hc: {
+    titulo: "Habeas Corpus",
+    texto: `Você é um advogado brasileiro especialista em habeas corpus. Elabore um HABEAS CORPUS com base nos arts. 124–127 da Resolução TJPB nº 29/2026.
+
+═══ DADOS DO PROCESSO ═══
+Número do processo de origem (se houver): [preencha]
+Autoridade coatora (nome e cargo): [ex.: MM. Juiz do Juizado Especial Criminal de Campina Grande/PB]
+Paciente (nome completo e qualificação): [preencha]
+Impetrante (nome completo): [preencha]
+Advogado(a) e OAB nº: [preencha]
+
+═══ ATO DE COAÇÃO ═══
+[Descreva a violência ou coação ilegal na liberdade de locomoção. Cole a decisão/ordem se disponível]
+
+═══ FUNDAMENTO DA ILEGALIDADE ═══
+[Por que o ato é ilegal ou abusivo — excesso de prazo, ausência de fundamentação, prisão indevida, etc.]
+
+═══ PEDIDO DE LIMINAR ═══
+[ ] Sim — urgência: [justifique] [ ] Não
+
+═══ INSTRUÇÕES PARA A PEÇA ═══
+1. Sem prazo e sem preparo — impetrado a qualquer tempo (art. 124, Res. 29/2026);
+2. Competência: Turma Recursal — para atos de juiz do Sistema dos Juizados;
+3. Relator pode conceder liminar SEM ouvir a autoridade coatora (art. 125);
+4. Após informações → MP (5 dias) → julgamento em mesa na primeira sessão;
+5. Alvará de soltura e salvo-conduto assinados pelo relator (art. 126);
+6. Estrutura: qualificação → ato coator → ilegalidade → liminar (se cabível) → concessão da ordem.`
+  },
+};
+
+const PROMPT_DESTAQUE = `Você é um advogado brasileiro especialista no Sistema dos Juizados Especiais. Elabore uma PETIÇÃO DE PEDIDO DE DESTAQUE DE PROCESSO DE PAUTA VIRTUAL COM HABILITAÇÃO PARA SUSTENTAÇÃO ORAL PRESENCIAL, com base nos arts. 58 e 80 da Resolução TJPB nº 29/2026.
+
+═══ DADOS DO PROCESSO ═══
+Número do processo: [preencha]
+Turma Recursal: [1ª / 2ª / 3ª Turma Recursal]
+Relator(a): [preencha se conhecido]
+Tipo de recurso em julgamento: [ex.: Recurso Inominado / Pedido de Uniformização]
+Requerente (nome completo — recorrente ou recorrido): [preencha]
+Advogado(a) subscritor(a): [preencha]
+OAB nº: [preencha]
+Data de início da sessão virtual: [ex.: 29/06/2026, segunda-feira às 14h]
+
+═══ PONTOS A SUSTENTAR ORALMENTE ═══
+[Descreva brevemente os argumentos que pretende desenvolver na sustentação oral presencial]
+
+═══ INSTRUÇÕES PARA A PEÇA ═══
+1. Dirigida ao(à) Relator(a) da Turma Recursal;
+2. Fundamentar no art. 58, caput e §§1º e 2º da Res. 29/2026 — pedido de destaque para retirada da sessão virtual e reinício do julgamento em sessão presencial;
+3. ATENÇÃO: o pedido deve ser apresentado até 48 horas antes do início da sessão virtual (art. 58, II) e depende de deferimento pelo relator;
+4. Incluir pedido de habilitação para sustentação oral (art. 80), com: nome completo, número da OAB, telefone, e-mail, número do processo, classe e órgão julgador;
+5. Destacar que, no julgamento presencial após destaque, a sustentação oral é assegurada (art. 58, §2º);
+6. Petição concisa e técnica, com fundamento expresso nos artigos citados.`;
+
+const PASSOS_SO = [
+  { n:"1", titulo:"Confirme o cabimento", corpo:"Cabível em: Recurso Inominado · Agravo Interno (originário de RI) · Apelação Criminal · HC · MS · Pedido de Uniformização (art. 80).", alerta:"NÃO cabível em Embargos de Declaração." },
+  { n:"2", titulo:"Descubra a data da sessão", corpo:"Consulte a pauta no DJe ou site do TJPB. Pauta virtual: publicada com mínimo 48h de antecedência. Pauta presencial: mínimo 5 dias úteis (art. 51).", alerta:null },
+  { n:"3", titulo:"Inscreva-se por e-mail à Secretaria da Turma", corpo:"O e-mail deve conter: (a) nome completo; (b) número da OAB; (c) telefone e e-mail; (d) número do processo; (e) classe processual; (f) órgão julgador.", alerta:null },
+  { n:"4", titulo:"Respeite o prazo de inscrição", corpo:"Sessão presencial → até 24h antes. Sessão virtual → inscrição e envio do arquivo até 48h antes do início.", alerta:"Inscrição fora do prazo → não admitida (art. 80, §3º)" },
+  { n:"5", titulo:"Para sessão virtual: envie o arquivo", corpo:"Arquivo de áudio e/ou vídeo, máximo 5 minutos. Seguir especificações técnicas do TJPB. Assinar termo declarando habilitação nos autos (art. 59, §2º).", alerta:"Arquivo fora das especificações → desconsiderado (art. 59, §1º)" },
+  { n:"6", titulo:"Compareça e aguarde a chamada do processo", corpo:"Videoconferência: acesse a plataforma antes do horário e aguarde na sala de espera. Presencial: esteja no local antes da abertura.", alerta:"Não comparecer na chamada = desistência presumida (art. 80, §5º)" },
+  { n:"7", titulo:"Sustentação: 5 minutos", corpo:"Secretário controla o tempo. MP recorrente sustenta antes do réu. MP como fiscal: após os advogados (art. 81).", alerta:null },
+];
+
+const SESSOES_LISTA = [
+  { turma:"1ª Turma Recursal",     dia:"Terças-feiras",  hora:"9h",  sede:"João Pessoa" },
+  { turma:"2ª Turma Recursal",     dia:"Quartas-feiras", hora:"9h",  sede:"João Pessoa" },
+  { turma:"3ª Turma Recursal",     dia:"Quintas-feiras", hora:"9h",  sede:"Campina Grande" },
+  { turma:"Turma de Uniformização",dia:"1ª segunda útil de março e agosto", hora:"—", sede:"João Pessoa" },
+];
+
+/* ══════════════════════════════════════════════════════
+   CALCULADORA
+══════════════════════════════════════════════════════ */
+const TIPO_COR = { feriado:"#B91C1C", facultativo:"#92400E", recesso:"#1E40AF", fds:"#6B7280" };
+const TIPO_LABEL = { feriado:"Feriado", facultativo:"Ponto Facultativo", recesso:"Recesso Forense", fds:"Fim de semana" };
+
+function Calculadora() {
+  const [tipoId, setTipoId]   = useState("");
+  const [dataStr, setDataStr] = useState("");
+  const [horaStr, setHoraStr] = useState("09:00");
+
+  const tipo = TIPOS_PRAZO.find(t => t.id === tipoId);
+
+  const resultado = useMemo(() => {
+    if (!tipo || !dataStr) return null;
+    const [ano, mes, dia] = dataStr.split("-").map(Number);
+    const dataBase = new Date(ano, mes - 1, dia);
+    const feriados = buildFeriados(ano);
+
+    if (tipo.tipo === "horas") {
+      const [h, mi] = horaStr.split(":").map(Number);
+      const dt = new Date(ano, mes - 1, dia, h, mi);
+      const v  = new Date(dt.getTime() + tipo.horas * 3_600_000);
+      return { modo:"horas", referencia:`${fmtC(dataBase)} às ${horaStr}`, vencimento:v,
+               vencimentoTexto:`${fmtL(v)} às ${String(v.getHours()).padStart(2,"0")}:${String(v.getMinutes()).padStart(2,"0")}`,
+               motivo:null, inicioContagem:null };
+    }
+    if (tipo.tipo === "horas_antes") {
+      const [h, mi] = horaStr.split(":").map(Number);
+      const sessao = new Date(ano, mes - 1, dia, h, mi);
+      const limite = new Date(sessao.getTime() - tipo.horas * 3_600_000);
+      return { modo:"horas_antes", referencia:`Sessão: ${fmtC(dataBase)} às ${horaStr}`, vencimento:limite,
+               vencimentoTexto:`${fmtL(limite)} às ${String(limite.getHours()).padStart(2,"0")}:${String(limite.getMinutes()).padStart(2,"0")}`,
+               motivo:null, inicioContagem:null };
+    }
+
+    // Início da contagem: próximo dia após a publicação
+    const inicioContagem = new Date(dataBase);
+    inicioContagem.setDate(inicioContagem.getDate() + 1);
+
+    let vencimento;
+    if (tipo.tipo === "uteis")    vencimento = addDiasUteis(dataBase, tipo.dias, feriados);
+    else if (tipo.tipo === "corridos") vencimento = addDiasCorridosCivel(dataBase, tipo.dias, feriados);
+    else                          vencimento = addDiasCorridosPenal(dataBase, tipo.dias);
+
+    // Motivo do vencimento (feriado, recesso, etc.)
+    const nu = getNaoUtil(new Date(vencimento.getTime() - 86_400_000), feriados);
+    const motivoProrrogacao = (() => {
+      if (tipo.tipo === "penal") return null;
+      // Verifica se houve prorrogação verificando se o dia calculado não seria o vencimento original
+      const vOrig = new Date(dataBase);
+      if (tipo.tipo === "uteis") {
+        // Calcula sem prorrogação
+        let tmp = new Date(dataBase), count = 0;
+        while (count < tipo.dias) { tmp.setDate(tmp.getDate() + 1); if (isDiaUtil(tmp, feriados)) count++; }
+        const naoUtil = getNaoUtil(tmp, feriados);
+        if (naoUtil) return naoUtil;
+      } else {
+        vOrig.setDate(vOrig.getDate() + tipo.dias);
+        const naoUtil = getNaoUtil(vOrig, feriados);
+        if (naoUtil) return naoUtil;
+      }
+      return null;
+    })();
+
+    return {
+      modo:"dias",
+      inicioContagem,
+      vencimento,
+      vencimentoTexto: fmtL(vencimento),
+      diasTipo: tipo.tipo === "penal" ? "corridos (penal)" : tipo.tipo === "corridos" ? "corridos" : "úteis",
+      qtd: tipo.dias,
+      motivoProrrogacao,
+      anoDados: (ano === 2026 || ano === 2027) ? "2026" : null,
+    };
+  }, [tipo, dataStr, horaStr]);
+
+  const precisaHora = tipo && (tipo.tipo === "horas" || tipo.tipo === "horas_antes");
+  const labelData   = tipo?.tipo === "horas_antes" ? "Data e hora da sessão" :
+                      tipo?.tipo === "horas"        ? "Data e hora do protocolo / intimação" :
+                      "Data da publicação / intimação";
+
+  return (
+    <div>
+      <div className="section-title">Calculadora de Prazos</div>
+      <div className="section-sub">
+        Para 2026: usa o <strong>calendário oficial do TJPB</strong> — feriados, pontos facultativos e recesso forense.
+        Para outros anos: usa feriados nacionais + estadual PB calculados automaticamente.
+      </div>
+
+      <div className="calc-card">
+        <div className="rec-label">Tipo de prazo</div>
+        <select className="calc-select" value={tipoId} onChange={e => setTipoId(e.target.value)}>
+          <option value="">— selecione —</option>
+          {GRUPOS_PRAZO.map(g => (
+            <optgroup key={g} label={g}>
+              {TIPOS_PRAZO.filter(t => t.grupo === g).map(t => (
+                <option key={t.id} value={t.id}>{t.label}</option>
+              ))}
+            </optgroup>
+          ))}
+        </select>
+        {tipo && (
+          <div className="calc-tipo-info">
+            <span className="chip chip-prazo">
+              {tipo.tipo === "horas" || tipo.tipo === "horas_antes" ? `${tipo.horas}h`
+                : `${tipo.dias} dias ${tipo.tipo === "uteis" ? "úteis" : tipo.tipo === "penal" ? "corridos (penal)" : "corridos"}`}
+            </span>
+            <span style={{ fontSize:11, color:"#8A9CB0", marginLeft:6 }}>{tipo.art}</span>
+            {tipo.obs && <div className="alerta-box" style={{ marginTop:8 }}><div className="alerta-text">ℹ {tipo.obs}</div></div>}
+          </div>
+        )}
+      </div>
+
+      {tipo && (
+        <div className="calc-card" style={{ marginTop:10 }}>
+          <div className="rec-label">{labelData}</div>
+          <div style={{ display:"flex", gap:10, flexWrap:"wrap" }}>
+            <input type="date" className="calc-input" value={dataStr} onChange={e => setDataStr(e.target.value)} />
+            {precisaHora && (
+              <input type="time" className="calc-input" style={{ maxWidth:110 }} value={horaStr} onChange={e => setHoraStr(e.target.value)} />
+            )}
+          </div>
+        </div>
+      )}
+
+      {resultado && (
+        <div className="calc-resultado">
+          <div className="calc-res-label">
+            Vencimento do prazo
+            {resultado.anoDados && <span style={{ marginLeft:8, fontSize:9, background:"#C4A454", color:"#0F2542", padding:"1px 6px", borderRadius:10, fontWeight:700 }}>TJPB 2026</span>}
+          </div>
+          <div className="calc-res-data">{resultado.vencimentoTexto}</div>
+          <div className="calc-res-fmt">{fmtC(resultado.vencimento)}</div>
+
+          {resultado.motivoProrrogacao && (
+            <div style={{ marginTop:12, padding:"10px 12px", background:"rgba(196,164,84,0.15)", borderRadius:3, borderLeft:"3px solid #C4A454" }}>
+              <div style={{ fontSize:10, letterSpacing:1.5, textTransform:"uppercase", color:"#C4A454", fontWeight:700, marginBottom:4 }}>
+                {TIPO_LABEL[resultado.motivoProrrogacao.tipo] || "Não-útil"} — prazo prorrogado
+              </div>
+              <div style={{ fontSize:12, color:"#E8D8A0" }}>{resultado.motivoProrrogacao.motivo}</div>
+            </div>
+          )}
+
+          {resultado.modo === "dias" && resultado.inicioContagem && (
+            <div style={{ marginTop:12, padding:"10px 12px", background:"rgba(255,255,255,0.08)", borderRadius:3 }}>
+              <div style={{ fontSize:9, letterSpacing:1.5, textTransform:"uppercase", color:"#8AAAC0", marginBottom:4 }}>Início da contagem</div>
+              <div style={{ fontSize:13, color:"#E8E4DC" }}>{fmtL(resultado.inicioContagem)}</div>
+              <div style={{ fontSize:11, color:"#6A8AA0", marginTop:3 }}>
+                {resultado.qtd} dias {resultado.diasTipo} a partir daqui
+                {resultado.tipo === "penal" ? " (sem prorrogação)" : " (com suspensão em dias não-úteis)"}
+              </div>
+            </div>
+          )}
+
+          {resultado.modo === "horas_antes" && (
+            <div style={{ marginTop:12, padding:"10px 12px", background:"rgba(255,255,255,0.08)", borderRadius:3 }}>
+              <div style={{ fontSize:9, letterSpacing:1.5, textTransform:"uppercase", color:"#8AAAC0", marginBottom:4 }}>Referência</div>
+              <div style={{ fontSize:13, color:"#E8E4DC" }}>{resultado.referencia}</div>
+            </div>
+          )}
+
+          {!resultado.anoDados && resultado.modo === "dias" && (
+            <div style={{ marginTop:12, padding:"8px 10px", background:"rgba(255,255,255,0.06)", borderRadius:3 }}>
+              <div style={{ fontSize:11, color:"#7A9AB0", lineHeight:1.5 }}>
+                ⚠ Calendário estimado — pontos facultativos e recesso do TJPB não incluídos. Para datas em 2026, selecione o ano correto para usar o calendário oficial.
+              </div>
+            </div>
+          )}
+        </div>
+      )}
+
+      {/* Calendário TJPB 2026 */}
+      <div className="calc-card" style={{ marginTop:18 }}>
+        <div className="info-title" style={{ marginBottom:12 }}>📅 Calendário Forense TJPB 2026</div>
+        <div style={{ fontSize:11, color:"#6B82A0", marginBottom:14, lineHeight:1.5 }}>
+          Fonte: Calendário Oficial TJPB 2026. Inclui feriados, pontos facultativos e recesso forense.
+          Feriados municipais variam por comarca — verifique no DJe.
+        </div>
+
+        {[
+          { mes:"Janeiro",   dias:[{d:"01/01",n:"Confraternização Universal + Recesso Forense",t:"feriado"},{d:"02/01 – 06/01",n:"Recesso Forense",t:"recesso"}] },
+          { mes:"Fevereiro", dias:[{d:"16/02",n:"Ponto Facultativo — Carnaval",t:"facultativo"},{d:"17/02",n:"Ponto Facultativo — Carnaval",t:"facultativo"},{d:"18/02",n:"Quarta-feira de Cinzas",t:"facultativo"}] },
+          { mes:"Abril",     dias:[{d:"02/04",n:"Ponto Facultativo — Semana Santa",t:"facultativo"},{d:"03/04",n:"Paixão de Cristo",t:"feriado"},{d:"20/04",n:"Ponto Facultativo (Compensado)",t:"facultativo"},{d:"21/04",n:"Tiradentes",t:"feriado"}] },
+          { mes:"Maio",      dias:[{d:"01/05",n:"Dia do Trabalhador",t:"feriado"}] },
+          { mes:"Junho",     dias:[{d:"04/06",n:"Corpus Christi (Ponto Facultativo)",t:"facultativo"},{d:"05/06",n:"Ponto Facultativo (Compensado)",t:"facultativo"},{d:"22–23/06",n:"Ponto Facultativo (Compensado)",t:"facultativo"},{d:"24/06",n:"Ponto Facultativo — São João",t:"facultativo"}] },
+          { mes:"Agosto",    dias:[{d:"05/08",n:"Feriado Estadual — Data Magna da Paraíba",t:"feriado"},{d:"10/08",n:"Ponto Facultativo (Compensado)",t:"facultativo"},{d:"11/08",n:"Fundação dos Cursos Jurídicos",t:"facultativo"}] },
+          { mes:"Setembro",  dias:[{d:"07/09",n:"Independência do Brasil",t:"feriado"}] },
+          { mes:"Outubro",   dias:[{d:"12/10",n:"Nossa Senhora Aparecida",t:"feriado"}] },
+          { mes:"Novembro",  dias:[{d:"02/11",n:"Finados",t:"feriado"},{d:"20/11",n:"Consciência Negra",t:"feriado"}] },
+          { mes:"Dezembro",  dias:[{d:"07/12",n:"Ponto Facultativo (Compensado)",t:"facultativo"},{d:"25/12",n:"Natal",t:"feriado"},{d:"20/12 – 06/01",n:"Recesso Forense",t:"recesso"}] },
+        ].map(({ mes, dias }) => (
+          <div key={mes} style={{ marginBottom:14 }}>
+            <div style={{ fontSize:10, letterSpacing:2, textTransform:"uppercase", color:"#0F2542", fontWeight:700, marginBottom:6, paddingBottom:4, borderBottom:"1px solid #E0EAF4" }}>{mes}</div>
+            {dias.map((f, i) => (
+              <div key={i} style={{ display:"flex", gap:10, alignItems:"center", padding:"5px 0", borderBottom:"1px solid #F0F4F8" }}>
+                <span style={{ fontSize:11, fontWeight:700, color:"#0F2542", minWidth:90, flexShrink:0 }}>{f.d}</span>
+                <span style={{ fontSize:11, color:"#2C3E55", flex:1 }}>{f.n}</span>
+                <span style={{ fontSize:9, fontWeight:700, padding:"2px 6px", borderRadius:10, background: TIPO_COR[f.t]+"22", color:TIPO_COR[f.t], flexShrink:0 }}>{TIPO_LABEL[f.t]}</span>
+              </div>
+            ))}
+          </div>
+        ))}
+      </div>
+    </div>
+  );
+}
+
+/* ══════════════════════════════════════════════════════
+   MODAL DE PROMPT
+══════════════════════════════════════════════════════ */
+function ModalPrompt({ titulo, texto, onClose }) {
+  const [copiado, setCopiado] = useState(false);
+
+  function copiar() {
+    navigator.clipboard.writeText(texto).then(() => {
+      setCopiado(true);
+      setTimeout(() => setCopiado(false), 2500);
+    });
+  }
+
+  return (
+    <div className="modal-overlay" onClick={onClose}>
+      <div className="modal-box" onClick={e => e.stopPropagation()}>
+        <div className="modal-header">
+          <div>
+            <div className="modal-badge">Elaborar peça no Claude</div>
+            <div className="modal-titulo">{titulo}</div>
+          </div>
+          <button className="close-btn" onClick={onClose}>×</button>
+        </div>
+
+        <div className="modal-instrucao">
+          <span className="modal-instrucao-n">1</span> Copie o prompt abaixo
+          <span className="modal-instrucao-sep">→</span>
+          <span className="modal-instrucao-n">2</span> Preencha os campos em colchetes com os dados do processo
+          <span className="modal-instrucao-sep">→</span>
+          <span className="modal-instrucao-n">3</span> Cole no Claude e envie
+        </div>
+
+        <textarea className="modal-textarea" readOnly value={texto} />
+
+        <div className="modal-actions">
+          <button className="modal-btn-copiar" onClick={copiar}>
+            {copiado ? "✓ Copiado!" : "Copiar prompt"}
+          </button>
+          <a
+            className="modal-btn-claude"
+            href="https://claude.ai/new"
+            target="_blank"
+            rel="noopener noreferrer"
+          >
+            Abrir Claude ↗
+          </a>
+        </div>
+      </div>
+    </div>
+  );
+}
+
+/* ══════════════════════════════════════════════════════
+   SEÇÕES
+══════════════════════════════════════════════════════ */
+function SecaoRecursos({ expanded, setExpanded, onPrompt }) {
+  return (
+    <>
+      <div className="section-title">Recursos cabíveis</div>
+      <div className="section-sub">Prazos, preparo e sustentação oral — Res. TJPB nº 29/2026.</div>
+      {RECURSOS_LISTA.map(r => (
+        <div className="rec-card" key={r.id}>
+          <div className="rec-head" onClick={() => setExpanded(expanded === r.id ? null : r.id)}>
+            <div className="rec-sigla">{r.sigla}</div>
+            <div className="rec-info">
+              <div className="rec-nome">{r.nome}</div>
+              <div className="rec-art">{r.art} · {r.destino}</div>
+              <div className="rec-chips">
+                <span className="chip chip-prazo">⏱ {r.prazo}</span>
+                <span className={`chip ${r.preparo?"chip-alerta":"chip-sim"}`}>{r.preparo?"💰 Preparo":"✓ Sem preparo"}</span>
+                <span className={`chip ${r.sustentacao?"chip-sim":"chip-nao"}`}>{r.sustentacao?"🎤 Oral":"🔇 Sem oral"}</span>
+              </div>
+            </div>
+            <span className={`rec-chevron ${expanded===r.id?"open":""}`}>▾</span>
+          </div>
+          <div className={`rec-body ${expanded===r.id?"open":""}`}>
+            <div className="rec-section"><div className="rec-label">Cabimento</div><div className="rec-text">{r.cabimento}</div></div>
+            <div className="rec-row">
+              <div className="rec-pill"><div className="rec-pill-label">Prazo</div><div className="rec-pill-val">{r.prazo}</div></div>
+              <div className="rec-pill"><div className="rec-pill-label">Preparo</div><div className="rec-pill-val">{r.preparo?"Exigido":"Dispensado"}</div></div>
+              <div className="rec-pill"><div className="rec-pill-label">Sustentação oral</div><div className="rec-pill-val">{r.sustentacao?"Cabível":"Não cabível"}</div></div>
+            </div>
+            <div className="rec-section"><div className="rec-label">Preparo</div><div className="rec-text">{r.preparo_d}</div></div>
+            <div className="rec-section"><div className="rec-label">Contrarrazões</div><div className="rec-text">{r.contra}</div></div>
+            <div className="rec-section"><div className="rec-label">Observações</div><div className="rec-text">{r.obs}</div></div>
+            {r.alerta && <div className="atencao-box"><div className="atencao-text">⛔ {r.alerta}</div></div>}
+            {PROMPTS_PECA[r.id] && (
+              <div style={{ marginTop:14, paddingTop:14, borderTop:"1px solid #E8EFF6" }}>
+                <button
+                  className="btn-elaborar"
+                  onClick={() => onPrompt(PROMPTS_PECA[r.id])}
+                >
+                  ✦ Elaborar {r.nome} no Claude
+                </button>
+              </div>
+            )}
+          </div>
+        </div>
+      ))}
+    </>
+  );
+}
+
+const TEMPLATE_EMAIL_SO =
+`Assunto: Pedido de Inscrição para Sustentação Oral — Proc. [NÚMERO DO PROCESSO]
+
+Prezada Secretaria da [1ª / 2ª / 3ª] Turma Recursal do TJPB,
+
+Nos termos do art. 80 da Resolução TJPB nº 29/2026, venho por meio deste requerer inscrição para SUSTENTAÇÃO ORAL no processo a seguir identificado:
+
+■ Número do processo: [preencha]
+■ Classe processual: [ex.: Recurso Inominado / Pedido de Uniformização]
+■ Órgão Julgador: [1ª / 2ª / 3ª Turma Recursal]
+■ Data prevista da sessão: [preencha]
+■ Nome completo do(a) advogado(a): [preencha]
+■ OAB nº: [preencha]
+■ Telefone para contato: [preencha]
+■ E-mail para contato: [preencha]
+
+Declaro que me encontro regularmente habilitado(a) nos autos e assumo responsabilidade pelo conteúdo e pela regularidade da inscrição.
+
+Para sessão VIRTUAL: encaminho em anexo o arquivo de áudio/vídeo da sustentação oral (máximo 5 minutos), conforme art. 59 da Resolução TJPB nº 29/2026.
+
+Atenciosamente,
+[Nome completo]
+OAB/PB nº [número]
+[Telefone]`;
+
+function SecaoSustentacao({ onPrompt }) {
+  const [copiadoEmail, setCopiadoEmail] = useState(false);
+
+  function copiarEmail() {
+    navigator.clipboard.writeText(TEMPLATE_EMAIL_SO).then(() => {
+      setCopiadoEmail(true);
+      setTimeout(() => setCopiadoEmail(false), 2500);
+    });
+  }
+
+  return (
+    <>
+      <div className="section-title">Sustentação Oral</div>
+      <div className="section-sub">Passo a passo completo — arts. 59, 80 e 81 da Res. 29/2026.</div>
+      {PASSOS_SO.map((p, i) => (
+        <div key={i}>
+          <div className="step">
+            <div className="step-n">{p.n}</div>
+            <div className="step-body">
+              <div className="step-title">{p.titulo}</div>
+              <div className="step-text">{p.corpo}</div>
+              {p.alerta && <div className="atencao-box" style={{ marginTop:8 }}><div className="atencao-text">⛔ {p.alerta}</div></div>}
+            </div>
+          </div>
+          {i < PASSOS_SO.length - 1 && <div className="step-line" />}
+        </div>
+      ))}
+
+      <div className="divider" />
+
+      {/* E-mail de inscrição SO */}
+      <div className="info-box">
+        <div className="info-title">📧 Solicitar inscrição por e-mail</div>
+        <div className="info-text" style={{ marginBottom:14 }}>
+          A inscrição deve ser enviada por e-mail à Secretaria da Turma Recursal correspondente (art. 80, I), com os dados obrigatórios. Consulte o e-mail atualizado de cada Turma no site do TJPB antes de enviar.
+        </div>
+        <div className="links-row">
+          <button className="btn-link-acao" onClick={copiarEmail}>
+            {copiadoEmail ? "✓ Template copiado!" : "📋 Copiar template de e-mail"}
+          </button>
+          <a
+            className="btn-link-externo"
+            href="https://www.tjpb.jus.br/juizados-especiais/turmas-recursais"
+            target="_blank"
+            rel="noopener noreferrer"
+          >
+            Ver contatos das Turmas ↗
+          </a>
+        </div>
+        <div style={{ marginTop:12, background:"#F5F8FC", borderRadius:3, padding:"12px 14px", fontSize:11, color:"#5A7A9A", lineHeight:1.6 }}>
+          <strong>Dados obrigatórios no e-mail (art. 80, I):</strong> nome completo · número da OAB · telefone · e-mail · número do processo · classe processual · órgão julgador
+        </div>
+      </div>
+
+      {/* Pedido de destaque */}
+      <div className="info-box">
+        <div className="info-title">Pedido de Destaque — retirada de pauta virtual para sessão presencial</div>
+        <div className="info-text" style={{ marginBottom:12 }}>
+          Com base no art. 58 da Res. 29/2026, qualquer das partes pode requerer o destaque do processo da sessão virtual para julgamento presencial, até <strong>48 horas antes</strong> do início, mediante deferimento do relator. No julgamento presencial após destaque, a sustentação oral é assegurada (art. 58, §2º).
+        </div>
+        <button
+          className="btn-elaborar"
+          onClick={() => onPrompt({ titulo:"Petição de Pedido de Destaque com Habilitação para Sustentação Oral", texto: PROMPT_DESTAQUE })}
+        >
+          ✦ Elaborar petição de destaque no Claude
+        </button>
+      </div>
+    </>
+  );
+}
+
+function SecaoSessoes() {
+  return (
+    <>
+      <div className="section-title">Sessões de Julgamento</div>
+      <div className="section-sub">Arts. 42–68 da Res. 29/2026.</div>
+      {SESSOES_LISTA.map((s, i) => (
+        <div className="sessao-card" key={i}>
+          <div className="sessao-turma">{s.turma}</div>
+          <div className="sessao-row">
+            <span className="sessao-tag sessao-dia">📅 {s.dia}</span>
+            {s.hora !== "—" && <span className="sessao-tag sessao-hora">🕘 {s.hora}</span>}
+            <span className="sessao-tag sessao-sede">📍 {s.sede}</span>
+          </div>
+        </div>
+      ))}
+      <div className="virtual-box">
+        <div className="virtual-title">🖥 Sessão Virtual — art. 50, §2º</div>
+        {[["Início","Segunda-feira às 14h00"],["Duração","7 dias corridos"],["Encerramento","Segunda-feira seguinte às 13h59"],["Publicação da pauta","Mínimo 48h antes"],["Voto do relator","Até o início da sessão"],["Quórum mínimo","3 votos de integrantes da Turma"],["Limite SO / arquivo","48h antes do início (art. 59, §6º)"]].map(([k,v]) => (
+          <div className="virtual-row" key={k}><span className="virtual-label">{k}:</span>{v}</div>
+        ))}
+      </div>
+      <div className="info-box" style={{ marginTop:14 }}>
+        <div className="info-title">Ordem da pauta (art. 44)</div>
+        <div className="info-text">1º — Idosos e pessoas com necessidades especiais · 2º — Pedidos de vista e adiados · 3º — Participação do Ministério Público</div>
+      </div>
+      <div className="info-box">
+        <div className="info-title">Dispensados de inclusão em pauta (art. 76)</div>
+        <div className="info-text">Habeas Corpus · Embargos de Declaração · Conflito de competência de ofício · Arguição de impedimento e suspeição · Desistência e acordo · Questões de ordem em mesa · Processos com pedido de vista</div>
+      </div>
+
+      {/* Links rápidos TJPB */}
+      <div className="info-box" style={{ marginTop:4 }}>
+        <div className="info-title">🔗 Acesso rápido — TJPB</div>
+        <div style={{ fontSize:12, color:"#6B82A0", marginBottom:14, lineHeight:1.5 }}>
+          Links diretos para consultar pautas, processos e contatos das Turmas Recursais.
+        </div>
+        <div className="links-grid">
+          <a className="link-card" href="https://www.tjpb.jus.br/juizados-especiais/turmas-recursais" target="_blank" rel="noopener noreferrer">
+            <span className="link-card-icon">⚖</span>
+            <div>
+              <div className="link-card-title">Turmas Recursais</div>
+              <div className="link-card-sub">Informações, composição e contatos</div>
+            </div>
+          </a>
+          <a className="link-card" href="https://www.tjpb.jus.br/juizados-especiais/enderecos-horarios" target="_blank" rel="noopener noreferrer">
+            <span className="link-card-icon">📍</span>
+            <div>
+              <div className="link-card-title">Endereços e Horários</div>
+              <div className="link-card-sub">Secretarias dos Juizados Especiais</div>
+            </div>
+          </a>
+          <a className="link-card" href="https://www.tjpb.jus.br/dje" target="_blank" rel="noopener noreferrer">
+            <span className="link-card-icon">📰</span>
+            <div>
+              <div className="link-card-title">DJe — Diário da Justiça</div>
+              <div className="link-card-sub">Consultar pautas e intimações</div>
+            </div>
+          </a>
+          <a className="link-card" href="https://pje.tjpb.jus.br/pje/login.seam" target="_blank" rel="noopener noreferrer">
+            <span className="link-card-icon">💻</span>
+            <div>
+              <div className="link-card-title">PJe TJPB</div>
+              <div className="link-card-sub">Processo Judicial Eletrônico</div>
+            </div>
+          </a>
+        </div>
+      </div>
+    </>
+  );
+}
+
+function SecaoUniformizacao() {
+  return (
+    <>
+      <div className="section-title">Pedido de Uniformização</div>
+      <div className="section-sub">Arts. 151–157 da Res. 29/2026.</div>
+      <div className="info-box">
+        <div className="info-title">Quando cabe?</div>
+        <div className="info-text">Divergência entre Turmas Recursais sobre <strong>questão de direito material</strong>. Não cabe sobre direito processual nem sobre matéria já decidida pela Turma de Uniformização.</div>
+        <div className="nao-cabe" style={{ marginTop:10 }}>
+          <div className="nao-cabe-title">Não será conhecido quando (art. 153):</div>
+          <div className="nao-cabe-text">I — Matéria já decidida pela Turma de Uniformização<br />II — Sem explicitação das circunstâncias de semelhança<br />III — Sem prova da divergência<br />IV — Divergência preexistente ao RI não indicada nas razões/contrarrazões<br />V — Sem preparo</div>
+        </div>
+      </div>
+      <div className="info-box">
+        <div className="info-title">Como interpor</div>
+        <div className="info-text"><strong>Prazo:</strong> 10 dias úteis da publicação da decisão divergente.<br /><br /><strong>Dirigido a:</strong> Presidente da Turma de Uniformização.<br /><br /><strong>Prova da divergência:</strong> certidão/cópia, citação de repositório credenciado ou reprodução de julgado da internet com fonte.<br /><br /><strong>Preparo:</strong> exigido (art. 29, IV).</div>
+        <div className="alerta-box" style={{ marginTop:10 }}>
+          <div className="alerta-text">⚠ Divergência preexistente ao RI: indicar nas razões ou contrarrazões do próprio RI — ou o Pedido de Uniformização não será conhecido (art. 151, §5º + art. 153, IV).</div>
+        </div>
+      </div>
+      <div className="info-box">
+        <div className="info-title">Limites externos</div>
+        <div className="nao-cabe">
+          <div className="nao-cabe-title">NÃO cabível no Sistema dos Juizados (arts. 147–150)</div>
+          <div className="nao-cabe-text">· NÃO cabe REsp contra TR — Súmula 203-STJ<br />· NÃO cabe IRDR — art. 150<br />· NÃO cabe IAC — art. 150<br />· Reclamações por divergência com STJ: Câmara Criminal ou Seção Cível do TJPB (Res. 3-STJ)</div>
+        </div>
+        <div className="verde-box"><div className="verde-text">✓ Cabe RE contra TR — Súmula 640-STF (art. 146)</div></div>
+      </div>
+    </>
+  );
+}
+
+function SecaoPreparo() {
+  return (
+    <>
+      <div className="section-title">Preparo e Gratuidade</div>
+      <div className="section-sub">Arts. 23–33 da Res. 29/2026.</div>
+      <div className="info-box">
+        <div className="info-title">Regra geral: 48 horas</div>
+        <div className="info-text">Comprovado em 48h da interposição, independentemente de intimação, sob pena de deserção automática (art. 30). Não se admite complementação intempestiva (art. 31, par. único).</div>
+      </div>
+      <div className="info-box">
+        <div className="info-title">Recursos que exigem preparo (art. 29)</div>
+        <div className="info-text">I — Recurso Inominado<br />II — Agravo de Instrumento<br />III — Apelação Criminal em ação penal privada<br />IV — Pedido de Uniformização<br />V — Recurso Extraordinário (custas locais + STF)</div>
+        <div className="verde-box"><div className="verde-text">✓ Dispensados: MP e entidades com isenção (art. 28). Embargos de Declaração (art. 108). Habeas Corpus.</div></div>
+      </div>
+      <div className="info-box">
+        <div className="info-title">Gratuidade processual</div>
+        <div className="info-text">Apreciada pelo relator no juízo de admissibilidade. Se indeferida: 48h para recolher preparo, sob pena de deserção (art. 29, §3º). O juiz pode, de ofício, exigir comprovação em 5 dias se houver elementos que afastem a presunção (art. 29, §2º).</div>
+        <div className="alerta-box" style={{ marginTop:10 }}>
+          <div className="alerta-text">⚠ Em 1º grau o acesso ao Juizado independe de custas. Pedidos de gratuidade em 1º grau devem ser desconsiderados — análise compete ao relator na TR, em recurso (art. 23, par. único).</div>
+        </div>
+      </div>
+      <div className="info-box">
+        <div className="info-title">Deserção</div>
+        <div className="info-text">Declarada monocraticamente pelo relator (art. 32, I) ou pelo Presidente no juízo de admissibilidade do RE (art. 32, II). Da decisão de deserção cabe Agravo Interno (art. 33).</div>
+      </div>
+    </>
+  );
+}
+
+/* ══════════════════════════════════════════════════════
+   APP
+══════════════════════════════════════════════════════ */
+function GuiaTR() {
+  const [section, setSection]     = useState("recursos");
+  const [expanded, setExpanded]   = useState(null);
+  const [promptAtivo, setPrompt]  = useState(null); // { titulo, texto }
+
+  const nav = [
+    { id:"recursos",      label:"Recursos",     icon:"⚖" },
+    { id:"calcular",      label:"Calcular",      icon:"🗓" },
+    { id:"sustentacao",   label:"Sustentação",  icon:"🎤" },
+    { id:"sessoes",       label:"Sessões",       icon:"📅" },
+    { id:"uniformizacao", label:"Uniformiz.",   icon:"🏛" },
+    { id:"preparo",       label:"Preparo",       icon:"💰" },
+  ];
+
+  return (
+    <div style={{ background:"#EEF2F7", minHeight:"100vh", fontFamily:"'Inter',sans-serif" }}>
+      <style>{`
+        @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Playfair+Display:wght@700&display=swap');
+        *{box-sizing:border-box;margin:0;padding:0;}
+        .hdr{background:#0F2542;color:#fff;padding:18px 20px 14px;}
+        .hdr-badge{font-size:9px;letter-spacing:3px;color:#C4A454;text-transform:uppercase;margin-bottom:4px;}
+        .hdr-title{font-family:'Playfair Display',serif;font-size:17px;font-weight:700;line-height:1.2;}
+        .hdr-sub{font-size:11px;opacity:.5;margin-top:3px;}
+        .nav{display:flex;background:#fff;border-bottom:1px solid #D8E2EE;overflow-x:auto;}
+        .nav::-webkit-scrollbar{height:0;}
+        .nav-btn{flex:1;min-width:62px;padding:9px 2px 8px;border:none;background:none;font-family:'Inter',sans-serif;font-size:9px;font-weight:500;color:#6B82A0;cursor:pointer;border-bottom:2px solid transparent;transition:all .15s;display:flex;flex-direction:column;align-items:center;gap:2px;}
+        .nav-btn.active{color:#0F2542;border-bottom-color:#C4A454;font-weight:700;}
+        .nav-btn:hover{color:#0F2542;}
+        .nav-icon{font-size:15px;}
+        .body{padding:16px;max-width:680px;margin:0 auto;}
+        .rec-card{background:#fff;border-radius:4px;margin-bottom:10px;overflow:hidden;border:1px solid #D8E2EE;}
+        .rec-head{display:flex;align-items:center;gap:12px;padding:14px 16px;cursor:pointer;transition:background .15s;}
+        .rec-head:hover{background:#F5F8FC;}
+        .rec-sigla{width:44px;height:44px;border-radius:4px;background:#0F2542;display:flex;align-items:center;justify-content:center;font-size:9.5px;font-weight:700;color:#C4A454;flex-shrink:0;text-align:center;line-height:1.2;}
+        .rec-info{flex:1;}
+        .rec-nome{font-size:14px;font-weight:700;color:#0F2542;margin-bottom:3px;}
+        .rec-art{font-size:10px;color:#8A9CB0;}
+        .rec-chips{display:flex;gap:6px;flex-wrap:wrap;margin-top:5px;}
+        .chip{font-size:10px;font-weight:600;padding:2px 8px;border-radius:20px;white-space:nowrap;}
+        .chip-prazo{background:#E8F0F8;color:#0F2542;}
+        .chip-sim{background:#E8F5EC;color:#1A6B2F;}
+        .chip-nao{background:#FEF3F2;color:#B91C1C;}
+        .chip-alerta{background:#FEF9E7;color:#7D5A00;}
+        .rec-chevron{font-size:18px;color:#8A9CB0;transition:transform .2s;flex-shrink:0;}
+        .rec-chevron.open{transform:rotate(180deg);}
+        .rec-body{border-top:1px solid #E8EFF6;padding:16px;display:none;}
+        .rec-body.open{display:block;}
+        .rec-section{margin-bottom:14px;}
+        .rec-label{font-size:9px;letter-spacing:2px;text-transform:uppercase;color:#8A9CB0;font-weight:600;margin-bottom:5px;}
+        .rec-text{font-size:13px;color:#2C3E55;line-height:1.7;}
+        .rec-row{display:flex;gap:12px;flex-wrap:wrap;margin-bottom:14px;}
+        .rec-pill{background:#F0F4F8;border-radius:3px;padding:8px 12px;flex:1;min-width:110px;}
+        .rec-pill-label{font-size:9px;letter-spacing:1.5px;text-transform:uppercase;color:#8A9CB0;margin-bottom:3px;}
+        .rec-pill-val{font-size:13px;font-weight:700;color:#0F2542;}
+        .alerta-box{background:#FEF9E7;border-left:3px solid #C4A454;padding:10px 12px;border-radius:0 3px 3px 0;}
+        .alerta-text{font-size:12px;color:#7D5A00;font-weight:500;line-height:1.5;}
+        .atencao-box{background:#FEF3F2;border-left:3px solid #C0392B;padding:10px 12px;border-radius:0 3px 3px 0;}
+        .atencao-text{font-size:12px;color:#B91C1C;font-weight:500;line-height:1.5;}
+        .step{display:flex;gap:14px;margin-bottom:14px;}
+        .step-n{width:30px;height:30px;border-radius:50%;background:#0F2542;color:#C4A454;font-size:12px;font-weight:700;display:flex;align-items:center;justify-content:center;flex-shrink:0;}
+        .step-body{flex:1;padding-top:4px;}
+        .step-title{font-size:13px;font-weight:700;color:#0F2542;margin-bottom:5px;}
+        .step-text{font-size:13px;color:#2C3E55;line-height:1.7;}
+        .step-line{width:1px;background:#D0DDE8;margin-left:14px;height:14px;}
+        .sessao-card{background:#fff;border:1px solid #D8E2EE;border-radius:4px;padding:14px 16px;margin-bottom:10px;}
+        .sessao-turma{font-size:13px;font-weight:700;color:#0F2542;margin-bottom:6px;}
+        .sessao-row{display:flex;gap:8px;flex-wrap:wrap;}
+        .sessao-tag{font-size:11px;padding:3px 10px;border-radius:20px;font-weight:500;}
+        .sessao-dia{background:#E8F0F8;color:#0F2542;}
+        .sessao-hora{background:#E8F5EC;color:#1A6B2F;}
+        .sessao-sede{background:#F3E8FF;color:#5B2D8E;}
+        .virtual-box{background:#fff;border:1px solid #D8E2EE;border-radius:4px;padding:16px;margin-top:14px;}
+        .virtual-title{font-size:13px;font-weight:700;color:#0F2542;margin-bottom:10px;}
+        .virtual-row{font-size:12px;color:#2C3E55;margin-bottom:5px;display:flex;gap:8px;}
+        .virtual-label{font-weight:600;color:#5A7A9A;min-width:140px;}
+        .section-title{font-family:'Playfair Display',serif;font-size:18px;color:#0F2542;margin-bottom:4px;}
+        .section-sub{font-size:12px;color:#6B82A0;margin-bottom:18px;line-height:1.5;}
+        .info-box{background:#fff;border:1px solid #D8E2EE;border-radius:4px;padding:16px;margin-bottom:10px;}
+        .info-title{font-size:13px;font-weight:700;color:#0F2542;margin-bottom:8px;}
+        .info-text{font-size:13px;color:#2C3E55;line-height:1.75;}
+        .nao-cabe{background:#FEF3F2;border-left:3px solid #C0392B;padding:10px 14px;border-radius:0 3px 3px 0;margin-top:10px;}
+        .nao-cabe-title{font-size:10px;letter-spacing:1.5px;text-transform:uppercase;color:#C0392B;font-weight:700;margin-bottom:5px;}
+        .nao-cabe-text{font-size:12px;color:#7A2020;line-height:1.6;}
+        .verde-box{background:#E8F5EC;border-left:3px solid #1A6B2F;padding:10px 14px;border-radius:0 3px 3px 0;margin-top:10px;}
+        .verde-text{font-size:12px;color:#1A4A25;line-height:1.6;}
+        .divider{height:1px;background:#D8E2EE;margin:14px 0;}
+        .calc-card{background:#fff;border:1px solid #D8E2EE;border-radius:4px;padding:16px;}
+        .calc-select{width:100%;border:1px solid #C8D8E8;border-radius:3px;padding:10px 12px;font-family:'Inter',sans-serif;font-size:13px;color:#0F2542;background:#fff;margin-top:6px;cursor:pointer;}
+        .calc-select:focus{outline:none;border-color:#0F2542;}
+        .calc-tipo-info{margin-top:12px;display:flex;align-items:center;flex-wrap:wrap;gap:8px;}
+        .calc-input{border:1px solid #C8D8E8;border-radius:3px;padding:10px 12px;font-family:'Inter',sans-serif;font-size:13px;color:#0F2542;background:#fff;flex:1;min-width:140px;margin-top:6px;}
+        .calc-input:focus{outline:none;border-color:#0F2542;}
+        .calc-resultado{background:#0F2542;border-radius:4px;padding:20px;margin-top:14px;}
+        .calc-res-label{font-size:9px;letter-spacing:2px;text-transform:uppercase;color:#C4A454;margin-bottom:8px;font-weight:600;display:flex;align-items:center;gap:8px;}
+        .calc-res-data{font-family:'Playfair Display',serif;font-size:18px;color:#fff;line-height:1.3;margin-bottom:4px;}
+        .calc-res-fmt{font-size:13px;color:#8AAAC0;font-weight:600;}
+        .btn-elaborar{width:100%;padding:12px 16px;border-radius:3px;border:2px solid #C4A454;background:transparent;color:#7D5A00;font-family:'Inter',sans-serif;font-size:12px;font-weight:700;letter-spacing:1px;cursor:pointer;text-transform:uppercase;transition:all .15s;text-align:center;}
+        .btn-elaborar:hover{background:#C4A454;color:#0F2542;}
+        .modal-overlay{position:fixed;inset:0;background:rgba(0,0,0,0.65);z-index:200;display:flex;align-items:center;justify-content:center;padding:16px;}
+        .modal-box{background:#fff;border-radius:6px;width:100%;max-width:560px;max-height:88vh;display:flex;flex-direction:column;overflow:hidden;box-shadow:0 24px 60px rgba(0,0,0,0.3);}
+        .modal-header{display:flex;justify-content:space-between;align-items:flex-start;padding:18px 20px 14px;background:#0F2542;gap:12px;flex-shrink:0;}
+        .modal-badge{font-size:9px;letter-spacing:2px;text-transform:uppercase;color:#C4A454;margin-bottom:4px;font-weight:600;}
+        .modal-titulo{font-family:'Playfair Display',serif;font-size:16px;font-weight:700;color:#fff;line-height:1.2;}
+        .modal-instrucao{display:flex;align-items:center;gap:6px;flex-wrap:wrap;padding:10px 14px;background:#F5F8FC;border-bottom:1px solid #E0EAF4;font-size:11px;color:#4A6A90;font-weight:500;flex-shrink:0;}
+        .modal-instrucao-n{width:18px;height:18px;border-radius:50%;background:#0F2542;color:#C4A454;font-size:9px;font-weight:700;display:inline-flex;align-items:center;justify-content:center;flex-shrink:0;}
+        .modal-instrucao-sep{color:#C8D8E8;font-size:14px;}
+        .modal-textarea{flex:1;resize:none;border:none;padding:16px;font-family:'Inter',sans-serif;font-size:12px;color:#2C3E55;line-height:1.7;overflow-y:auto;background:#FAFCFF;min-height:200px;}
+        .modal-textarea:focus{outline:none;}
+        .modal-actions{display:flex;gap:10px;padding:14px 16px;border-top:1px solid #E0EAF4;background:#fff;flex-shrink:0;}
+        .modal-btn-copiar{flex:1;padding:11px;border-radius:3px;border:none;background:#0F2542;color:#C4A454;font-family:'Inter',sans-serif;font-size:12px;font-weight:700;letter-spacing:1px;cursor:pointer;text-transform:uppercase;transition:all .15s;}
+        .modal-btn-copiar:hover{background:#1A3A5C;}
+        .modal-btn-claude{flex:1;padding:11px;border-radius:3px;background:#C4A454;color:#0F2542;font-family:'Inter',sans-serif;font-size:12px;font-weight:700;letter-spacing:1px;text-transform:uppercase;text-decoration:none;display:flex;align-items:center;justify-content:center;transition:all .15s;}
+        .modal-btn-claude:hover{background:#D4B464;}
+        .close-btn{background:rgba(255,255,255,0.15);border:none;color:#fff;width:30px;height:30px;border-radius:50%;cursor:pointer;font-size:16px;display:flex;align-items:center;justify-content:center;flex-shrink:0;transition:background .15s;}
+        .close-btn:hover{background:rgba(255,255,255,0.3);}
+        .links-row{display:flex;gap:8px;flex-wrap:wrap;}
+        .btn-link-acao{flex:1;min-width:140px;padding:10px 14px;border-radius:3px;border:none;background:#0F2542;color:#C4A454;font-family:'Inter',sans-serif;font-size:11px;font-weight:700;letter-spacing:0.8px;cursor:pointer;transition:all .15s;text-align:center;}
+        .btn-link-acao:hover{background:#1A3A5C;}
+        .btn-link-externo{flex:1;min-width:140px;padding:10px 14px;border-radius:3px;border:1px solid #C8D8E8;background:#fff;color:#0F2542;font-family:'Inter',sans-serif;font-size:11px;font-weight:600;cursor:pointer;transition:all .15s;text-align:center;text-decoration:none;display:inline-flex;align-items:center;justify-content:center;gap:4px;}
+        .btn-link-externo:hover{background:#F0F4F8;border-color:#0F2542;}
+        .links-grid{display:grid;grid-template-columns:repeat(2,1fr);gap:10px;}
+        @media(max-width:480px){.links-grid{grid-template-columns:1fr;}}
+        .link-card{display:flex;align-items:center;gap:12px;padding:12px 14px;background:#F5F8FC;border:1px solid #D8E2EE;border-radius:4px;text-decoration:none;transition:all .15s;cursor:pointer;}
+        .link-card:hover{background:#E8F0F8;border-color:#0F2542;}
+        .link-card-icon{font-size:20px;flex-shrink:0;width:28px;text-align:center;}
+        .link-card-title{font-size:12px;font-weight:700;color:#0F2542;margin-bottom:2px;}
+        .link-card-sub{font-size:10px;color:#6B82A0;}
+      `}</style>
+
+      {promptAtivo && (
+        <ModalPrompt
+          titulo={promptAtivo.titulo}
+          texto={promptAtivo.texto}
+          onClose={() => setPrompt(null)}
+        />
+      )}
+
+      <div className="hdr">
+        <div className="hdr-badge">TJPB · Resolução nº 29/2026</div>
+        <div className="hdr-title">Guia das Turmas Recursais</div>
+        <div className="hdr-sub">Sistema dos Juizados Especiais da Paraíba</div>
+      </div>
+
+      <div className="nav">
+        {nav.map(n => (
+          <button key={n.id} className={`nav-btn ${section===n.id?"active":""}`} onClick={()=>{setSection(n.id);setExpanded(null);}}>
+            <span className="nav-icon">{n.icon}</span>{n.label}
+          </button>
+        ))}
+      </div>
+
+      <div className="body">
+        {section==="recursos"      && <SecaoRecursos expanded={expanded} setExpanded={setExpanded} onPrompt={setPrompt} />}
+        {section==="calcular"      && <Calculadora />}
+        {section==="sustentacao"   && <SecaoSustentacao onPrompt={setPrompt} />}
+        {section==="sessoes"       && <SecaoSessoes />}
+        {section==="uniformizacao" && <SecaoUniformizacao />}
+        {section==="preparo"       && <SecaoPreparo />}
+
+        <div style={{ marginTop:28, padding:"12px 0", borderTop:"1px solid #D0DCE8", textAlign:"center" }}>
+          <div style={{ fontSize:10, color:"#8A9CB0", lineHeight:1.6 }}>
+            Res. TJPB nº 29/2026 · Calendário Oficial TJPB 2026<br />
+            Feriados municipais variam por comarca. Consulte sempre o DJe.
+          </div>
+        </div>
+      </div>
+    </div>
+  );
+}
+
+    // Montar o app
+    const rootEl = document.getElementById('root');
+    const appRoot = ReactDOM.createRoot(rootEl);
+    appRoot.render(<GuiaTR />);
+
+    // Remover tela de loading
+    document.getElementById('loading').style.display = 'none';
+  </script>
+</body>
+</html>
